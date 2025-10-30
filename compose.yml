@@ -13,7 +13,10 @@ services:
     ports:
      - "${PROXY_PORT:-127.0.0.1:1080}:1080"
     healthcheck:
-      test: ["CMD-SHELL", "mullvad status | grep -iq 'connected'"]
+      test: [
+        "CMD-SHELL", 
+        "curl -fs --socks5 127.0.0.1:1080 https://am.i.mullvad.net/connected | grep -iq 'are connected'"
+      ]
       timeout: 10s
       start_period: 10s
     labels:
