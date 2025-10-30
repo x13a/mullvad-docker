@@ -1,0 +1,31 @@
+services:
+  mullvad:
+    build: .
+    image: ghcr.io/x13a/mullvad-proxy:latest
+    restart: unless-stopped
+    volumes:
+      - mullvad_config:/config
+    container_name: mullvad
+    cap_add:
+      - NET_ADMIN
+    sysctls:
+     - net.ipv4.conf.all.src_valid_mark=1
+    ports:
+     - "${PROXY_PORT:-127.0.0.1:1080}:1080"
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+
+  gost:
+    image: gogost/gost
+    container_name: gost
+    restart: unless-stopped
+    network_mode: service:mullvad
+    depends_on:
+      - mullvad
+    command: ["-L", ":1080"]
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+
+volumes:
+  mullvad_config:
+    name: mullvad_config
