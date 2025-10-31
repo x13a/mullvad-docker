@@ -1,4 +1,4 @@
-name: Check Mullvad version and rebuild if needed
+name: Update
 
 on:
   schedule:
