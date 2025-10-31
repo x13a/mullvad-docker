@@ -28,6 +28,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Get latest Mullvad VPN version
+        id: mullvad
+        run: |
+          version=$(curl -fsSL https://repository.mullvad.net/deb/stable/dists/stable/main/binary-amd64/Packages \
+            | awk '/^Package: mullvad-vpn$/,/^$/' | grep '^Version:' | head -n1 | awk '{print $2}')
+          echo "version=$version" >> $GITHUB_OUTPUT
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
@@ -37,3 +44,4 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/mullvad:latest
             ghcr.io/${{ github.repository_owner }}/mullvad:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/mullvad:${{ steps.mullvad.outputs.version }}

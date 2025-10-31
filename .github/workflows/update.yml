@@ -1,0 +1,65 @@
+name: Check Mullvad version and rebuild if needed
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fetch latest Mullvad version
+        id: mullvad
+        run: |
+          version=$(curl -fsSL https://repository.mullvad.net/deb/stable/dists/stable/main/binary-amd64/Packages \
+            | awk '/^Package: mullvad-vpn$/,/^$/' | grep '^Version:' | head -n1 | awk '{print $2}')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Latest Mullvad version: $version"
+
+      - name: Read last known version
+        id: last
+        run: |
+          if [ -f version.txt ]; then
+            last=$(cat version.txt)
+          else
+            last=""
+          fi
+          echo "last=$last" >> "$GITHUB_OUTPUT"
+          echo "Last version: $last"
+
+      - name: Compare versions
+        id: compare
+        run: |
+          if [ "${{ steps.mullvad.outputs.version }}" != "${{ steps.last.outputs.last }}" ]; then
+            echo "new_version=true" >> "$GITHUB_OUTPUT"
+            echo "New Mullvad version detected!"
+          else
+            echo "new_version=false" >> "$GITHUB_OUTPUT"
+            echo "No new version."
+          fi
+
+      - name: Trigger build workflow
+        if: steps.compare.outputs.new_version == 'true'
+        run: |
+          gh workflow run ".github/workflows/docker.yml" \
+            -f version="${{ steps.mullvad.outputs.version }}"
+
+      - name: Update version.txt
+        if: steps.compare.outputs.new_version == 'true'
+        run: |
+          echo "${{ steps.mullvad.outputs.version }}" > version.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add version.txt
+          git commit -m "Update Mullvad version to ${{ steps.mullvad.outputs.version }}"
+          git push
