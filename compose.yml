@@ -1,7 +1,7 @@
 services:
   mullvad:
     build: .
-    image: ghcr.io/x13a/mullvad-proxy:latest
+    image: ghcr.io/x13a/mullvad:latest
     restart: unless-stopped
     volumes:
       - mullvad_config:/config

@@ -35,5 +35,5 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/mullvad-proxy:latest
-            ghcr.io/${{ github.repository_owner }}/mullvad-proxy:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/mullvad:latest
+            ghcr.io/${{ github.repository_owner }}/mullvad:${{ github.sha }}
