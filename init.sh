@@ -24,4 +24,4 @@ main() {
     echo "done"
 }
 
-main
+main "$@"
