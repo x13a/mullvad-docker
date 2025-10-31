@@ -2,10 +2,10 @@ services:
   mullvad:
     build: .
     image: ghcr.io/x13a/mullvad:latest
+    container_name: mullvad
     restart: unless-stopped
     volumes:
       - mullvad_config:/config
-    container_name: mullvad
     cap_add:
       - NET_ADMIN
     sysctls:
