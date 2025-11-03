@@ -10,8 +10,8 @@ services:
       - NET_ADMIN
     sysctls:
      - net.ipv4.conf.all.src_valid_mark=1
-    ports:
-     - "${PROXY_PORT:-127.0.0.1:1080}:1080"
+    networks:
+     - proxy
     healthcheck:
       test: [
         "CMD-SHELL", 
@@ -45,3 +45,6 @@ services:
 volumes:
   mullvad_config:
     name: mullvad_config
+networks:
+  proxy:
+    external: true
