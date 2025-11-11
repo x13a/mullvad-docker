@@ -1,17 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ENV_FILE="./mullvad.env"
+ENV_FILE="${ENV_FILE:-./mullvad.env}"
 
 main() {
     chmod 600 $ENV_FILE
     source $ENV_FILE
-
-    if [ -z "$MULLVAD_ACCOUNT" ]; then
-        echo "empty account, exit"
+    if [ -z "$MULLVAD_ACCOUNT" ] || [ -z "$MULLVAD_LOCATION"]; then
+        echo "empty account or location, exit"
         exit 1
     fi
-
     docker compose up -d
     docker exec -it mullvad mullvad account login "$MULLVAD_ACCOUNT"
     docker exec -it mullvad mullvad relay set tunnel-protocol wireguard
