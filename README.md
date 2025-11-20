@@ -4,15 +4,10 @@ Mullvad VPN docker container
 
 ## Usage
 
-Clone repository to local directory:
+Clone repository and switch into it:
 
 ```sh
 git clone https://github.com/x13a/mullvad-docker mullvad
-```
-
-Change directory to recently clonned repository:
-
-```sh
 cd mullvad
 ```
 

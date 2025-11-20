@@ -21,10 +21,6 @@ services:
       start_period: 10s
     labels:
       com.centurylinklabs.watchtower.enable: "true"
-    logging:
-      options:
-        max-size: 10m
-        max-file: "5"
 
   gost:
     image: gogost/gost
@@ -37,10 +33,6 @@ services:
     command: ["-L", ":1080"]
     labels:
       com.centurylinklabs.watchtower.enable: "true"
-    logging:
-      options:
-        max-size: 10m
-        max-file: "5"
 
 volumes:
   mullvad_config:
