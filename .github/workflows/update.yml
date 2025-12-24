@@ -1,4 +1,4 @@
-name: Update
+name: Check for upstream Mullvad updates
 
 on:
   schedule:
@@ -9,57 +9,38 @@ jobs:
   check:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       actions: write
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
-      - name: Fetch latest Mullvad version
-        id: mullvad
+      - name: Check upstream Mullvad version
+        id: check
         run: |
-          version=$(curl -fsSL https://repository.mullvad.net/deb/stable/dists/stable/main/binary-amd64/Packages \
+          set -euo pipefail
+          UPSTREAM_VERSION=$(curl -fsSL https://repository.mullvad.net/deb/stable/dists/stable/main/binary-amd64/Packages \
             | awk '/^Package: mullvad-vpn$/,/^$/' | grep '^Version:' | head -n1 | awk '{print $2}')
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "Latest Mullvad version: $version"
-
-      - name: Read last known version
-        id: last
-        run: |
-          if [ -f version.txt ]; then
-            last=$(cat version.txt)
-          else
-            last=""
+          if [ -z "$UPSTREAM_VERSION" ]; then
+            echo "Failed to read upstream version from mullvad repo" >&2
+            exit 1
           fi
-          echo "last=$last" >> "$GITHUB_OUTPUT"
-          echo "Last version: $last"
-
-      - name: Compare versions
-        id: compare
-        run: |
-          if [ "${{ steps.mullvad.outputs.version }}" != "${{ steps.last.outputs.last }}" ]; then
-            echo "new_version=true" >> "$GITHUB_OUTPUT"
-            echo "New Mullvad version detected!"
+          CURRENT_VERSION=$(cat version.txt | tr -d '[:space:]')
+          echo "upstream_version=$UPSTREAM_VERSION" >> "$GITHUB_OUTPUT"
+          echo "current_version=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
+          if [ "$UPSTREAM_VERSION" != "$CURRENT_VERSION" ]; then
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+            echo "New version found: $UPSTREAM_VERSION (current: $CURRENT_VERSION)"
           else
-            echo "new_version=false" >> "$GITHUB_OUTPUT"
-            echo "No new version."
+            echo "should_build=false" >> "$GITHUB_OUTPUT"
+            echo "No update needed: $CURRENT_VERSION"
           fi
 
       - name: Trigger build workflow
-        if: steps.compare.outputs.new_version == 'true'
+        if: steps.check.outputs.should_build == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh workflow run ".github/workflows/docker.yml" \
-            -f version="${{ steps.mullvad.outputs.version }}"
-
-      - name: Update version.txt
-        if: steps.compare.outputs.new_version == 'true'
-        run: |
-          echo "${{ steps.mullvad.outputs.version }}" > version.txt
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add version.txt
-          git commit -m "Update Mullvad version to ${{ steps.mullvad.outputs.version }}"
-          git push
+            -f mullvad_version="${{ steps.check.outputs.upstream_version }}"
