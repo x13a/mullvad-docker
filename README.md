@@ -1,6 +1,9 @@
 # mullvad-docker
 
-Mullvad VPN docker container
+Mullvad VPN docker hardened image
+
+This repository automatically builds a Mullvad VPN Docker hardened image. The workflow publishes 
+a package using the same tag as the latest upstream version.
 
 ## Usage
 
